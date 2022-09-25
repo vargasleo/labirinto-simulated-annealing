@@ -10,14 +10,18 @@ import static main.algoritmo.Log.*;
 
 public final class Algoritmo {
 
+    private static final Random random = new Random();
     // Direções indicam as coordenadas de posições adjacentes a uma dada posição.
     public static final int[][] DIRECOES =
             new int[][]{
                     {-1, -1}, {0, -1}, {1, -1},
                     {-1, 0} /*{0, 0}*/, {1, 0},
                     {-1, 1}, {0, 1}, {1, 1}};
+    public static final double TEMPERATURA_MAXIMA = 10000.0;
+    public static final double TEMPERATURA_MINIMA = 0.0001;
+    public static final double REDUCAO_TEMPERATURA_POR_ITERACAO = 0.9999;
     private final int tamanho; // Labirinto quadrado, logo, o tamanho é o número de linhas e colunas.
-    private final int comida; // Metade do tamanho do labirinto
+    private final int comidaTotal; // Metade do tamanho do labirinto
     private final char[][] labirinto; // 'E'=Início, '0'=Caminho, '1'=Parede, 'C'=Comida
     private Solucao atual;
     private Solucao vizinha;
@@ -26,9 +30,9 @@ public final class Algoritmo {
     private Algoritmo(final char[][] labirinto) {
         this.labirinto = labirinto;
         this.tamanho = labirinto.length;
-        this.comida = this.tamanho / 2;
-        this.atual = new Solucao(tamanho);
-        this.vizinha = new Solucao(tamanho);
+        this.comidaTotal = this.tamanho / 2;
+        this.atual = new Solucao();
+        this.vizinha = new Solucao();
     }
 
     // Equivalente ao construtor, mas lê o labirinto de um arquivo no formato de exemplo especificado no enunciado.
@@ -51,77 +55,88 @@ public final class Algoritmo {
         imprimirSolucao(atual.direcoes, "Solução atual");
         imprimirCaminho(atual.direcoes, labirinto, "Caminho da solução atual");
 
-        var temperatura = 1000.0;
-        while (temperatura > 0.0001) {
+        var temperatura = TEMPERATURA_MAXIMA;
+        while (temperatura > TEMPERATURA_MINIMA) {
+            System.out.println("Temperatura: " + temperatura + "ºC");
             vizinha();
             imprimirSolucao(vizinha.direcoes, "Solução vizinha");
             imprimirCaminho(vizinha.direcoes, labirinto, "Caminho da solução vizinha");
-
-            if (atual.comida == comida) break;
-            if (vizinha.ultimoIndiceValido > atual.ultimoIndiceValido) swap();
-
+            if (atual.comida == comidaTotal) break;
+            if (vizinha.comida > atual.comida) swap();
             else {
-                final var diffEnergia = Math.abs(vizinha.ultimoIndiceValido - atual.ultimoIndiceValido);
+                final var diffEnergia = Math.abs(vizinha.comida - atual.comida);
                 final var chanceAceitePiorSolucao = Math.exp(-diffEnergia / temperatura);
                 if (Math.random() < chanceAceitePiorSolucao) swap();
             }
-            temperatura *= 0.9999;
+            temperatura *= REDUCAO_TEMPERATURA_POR_ITERACAO;
         }
     }
 
     private void atual() {
-        Random random = new Random();
         var linha = 0;
         var coluna = 0;
-        var i = 0;
-        atual.ultimoIndiceValido = 0;
-        while (true) {
-            var indiceDirecao = random.nextInt(DIRECOES.length);
-            linha += DIRECOES[indiceDirecao][0];
-            coluna += DIRECOES[indiceDirecao][1];
-            if (linha < 0 || linha > tamanho - 1 || coluna < 0 || coluna > tamanho - 1) break;
-            if (labirinto[linha][coluna] == 'C') {
-                if (atual.comidas.get(linha + "," + coluna) == null || !atual.comidas.get(linha + "," + coluna)) {
-                    atual.comidas.put(linha + "," + coluna, true);
-                    vizinha.comida++;
-                }
-                atual.direcoes[i] = DIRECOES[indiceDirecao];
-            } else if (labirinto[linha][coluna] == '0') atual.direcoes[i] = DIRECOES[indiceDirecao];
-            else break;
-            atual.ultimoIndiceValido++;
-            i++;
+        var movimentos = 0;
+        while (movimentos < 2) {
+
+            var direcao = direcaoAleatoria();
+
+            int tlinha = linha + DIRECOES[direcao][0];// incrementa a linha conforme a direção
+            int tcoluna = coluna + DIRECOES[direcao][1];// incrementa a coluna conforme a direção
+
+            if (isForaDoLabirinto(tlinha, tcoluna)) continue;
+            if (isParede(tlinha, tcoluna)) continue;
+            if (isComida(tlinha, tcoluna)) atual.tentaComer(tlinha, tcoluna);
+
+            atual.andar(DIRECOES[direcao]);
+
+            linha = tlinha;
+            coluna = tcoluna;
+            movimentos++;
         }
     }
 
+    private boolean isParede(int linha, int coluna) {
+        return labirinto[linha][coluna] == '1';
+    }
+
+    private int direcaoAleatoria() {
+        return random.nextInt(DIRECOES.length);
+    }
+
+    private boolean isComida(int linha, int coluna) {
+        return labirinto[linha][coluna] == 'C';
+    }
+
+    private boolean isForaDoLabirinto(int linha, int coluna) {
+        return linha < 0 || linha > tamanho - 1 || coluna < 0 || coluna > tamanho - 1;
+    }
+
     private void vizinha() {
-        final var random = new Random();
-        System.out.println(atual.ultimoIndiceValido);
-        int indiceMutacao = atual.ultimoIndiceValido == 0 ? 0 : random.nextInt(atual.ultimoIndiceValido);
+        var indiceMutacao = random.nextInt(atual.direcoes.size());
         vizinha = copiarAte(indiceMutacao, atual);
         var linha = vizinha.linha;
         var coluna = vizinha.coluna;
-        int indice = indiceMutacao;
-        while (true) {
-            int indiceDirecao = random.nextInt(DIRECOES.length);
-            linha += DIRECOES[indiceDirecao][0];
-            coluna += DIRECOES[indiceDirecao][1];
-            if (linha < 0 || linha > tamanho - 1 || coluna < 0 || coluna > tamanho - 1) break;
-            if (labirinto[linha][coluna] == 'C') {
-                if (atual.comidas.get(linha + "," + coluna) == null || !atual.comidas.get(linha + "," + coluna)) {
-                    atual.comidas.put(linha + "," + coluna, true);
-                    vizinha.comida++;
-                }
-                vizinha.direcoes[indice] = DIRECOES[indiceDirecao];
-            } else if (labirinto[linha][coluna] == '0') vizinha.direcoes[indice] = DIRECOES[indiceDirecao];
-            else break;
-            vizinha.ultimoIndiceValido++;
-            indice++;
+        var movimentos = 0;
+        while (movimentos < 1) {
+            var direcao = direcaoAleatoria();
+
+            int tlinha = linha + DIRECOES[direcao][0];// incrementa a linha conforme a direção
+            int tcoluna = coluna + DIRECOES[direcao][1];// incrementa a coluna conforme a direção
+
+            if (isForaDoLabirinto(tlinha, tcoluna)) continue;
+            if (isParede(tlinha, tcoluna)) continue;
+            if (isComida(tlinha, tcoluna)) vizinha.tentaComer(tlinha, tcoluna);
+
+            vizinha.andar(DIRECOES[direcao]);
+
+            linha = tlinha;
+            coluna = tcoluna;
+            movimentos++;
         }
     }
 
     private Solucao copiarAte(int indiceMutacao, Solucao atual) {
-        var copia = new Solucao(tamanho);
-        copia.ultimoIndiceValido = indiceMutacao;
+        var copia = new Solucao();
         copia.comida = 0;
         copia.comidas = new HashMap<>();
         var linha = 0;
@@ -129,13 +144,8 @@ public final class Algoritmo {
         for (int i = 0; i < indiceMutacao; i++) {
             linha += atual.linha;
             coluna += atual.coluna;
-            copia.direcoes[i] = atual.direcoes[i];
-            if (labirinto[linha][coluna] == 'C') {
-                if (atual.comidas.get(linha + "," + coluna) == null || !atual.comidas.get(linha + "," + coluna)) {
-                    copia.comidas.put(linha + "," + coluna, true);
-                    copia.comida++;
-                }
-            }
+            copia.direcoes.add(atual.direcoes.get(i));
+            if(isComida(linha, coluna)) copia.tentaComer(linha, coluna);
         }
         return copia;
     }

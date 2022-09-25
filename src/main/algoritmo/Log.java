@@ -1,25 +1,28 @@
 package main.algoritmo;
 
+import java.util.List;
 import java.util.Map;
+
+import static main.algoritmo.Algoritmo.DIRECOES;
 
 public class Log {
 
     // Tradução das direções para os seus devidos nomes.
-    public static final Map<String, String> DIRECOES_NOME = Map.of(
-            "-1-1", "NOROESTE",
-            "-10", "OESTE",
-            "-11", "SUDESTE",
-            "01", "SUL",
-            "11", "SUDESTE",
-            "10", "LESTE",
-            "1-1", "NORDESTE",
-            "0-1", "NORTE"
+    public static final Map<String, int[]> DIRECOES_NOME = Map.of(
+            "NOROESTE", DIRECOES[0],
+            "NORTE", DIRECOES[1],
+            "NORDESTE", DIRECOES[2],
+            "OESTE", DIRECOES[3],
+            "LESTE", DIRECOES[4],
+            "SUDOESTE", DIRECOES[5],
+            "SUL", DIRECOES[6],
+            "SUDESTE", DIRECOES[7]
     );
 
     private Log() {
     }
 
-    public static void imprimirSolucao(int[][] solucao, String mensagem) {
+    public static void imprimirSolucao(List<int[]> solucao, String mensagem) {
         System.out.println(mensagem);
         System.out.print("[");
         for (int[] ints : solucao) {
@@ -31,18 +34,14 @@ public class Log {
         System.out.println();
     }
 
-    public static void aplicarSolucaoEm(int[][] solucao, char[][] labirinto) {
-        labirinto[0][0] = 1;
-        for (int i = 0; i < solucao.length; i++) {
-            int linha = 0;
-            int coluna = 0;
-            for (int j = 0; j < i; j++) {
-                linha += solucao[j][0];
-                coluna += solucao[j][1];
-            }
-            if (linha < 0 || linha > labirinto.length - 1 || coluna < 0 || coluna > labirinto.length - 1) {
-                break;
-            }
+    public static void aplicarSolucaoEm(List<int[]> solucao, char[][] labirinto) {
+        var linha = 0;
+        var coluna = 0;
+        labirinto[linha][coluna] = 'X';
+
+        for (var i = 0; i < solucao.size(); i++) {
+            linha += solucao.get(i)[0];
+            coluna += solucao.get(i)[1];
             labirinto[linha][coluna] = 'X';
         }
     }
@@ -55,13 +54,13 @@ public class Log {
         }
     }
 
-    public static void imprimirCaminho(int[][] solucao, char[][] labirinto, String mensagem) {
+    public static void imprimirCaminho(List<int[]> solucao, char[][] labirinto, String mensagem) {
         var copy = copyOf(labirinto);
         aplicarSolucaoEm(solucao, copy);
         imprimir(copy, mensagem);
     }
 
-    private static char[][] copyOf(char[][] labirinto) {
+    static char[][] copyOf(char[][] labirinto) {
         var copy = new char[labirinto.length][labirinto.length];
         for (int i = 0; i < labirinto.length; i++) {
             System.arraycopy(labirinto[i], 0, copy[i], 0, labirinto.length);
