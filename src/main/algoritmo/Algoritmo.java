@@ -14,9 +14,9 @@ public final class Algoritmo {
     // Direções indicam as coordenadas de posições adjacentes a uma dada posição.
     public static final int[][] DIRECOES =
             new int[][]{
-                    {-1, -1}, {0, -1}, {1, -1},
-                    {-1, 0} /*{0, 0}*/, {1, 0},
-                    {-1, 1}, {0, 1}, {1, 1}};
+                    {-1, -1}, {-1, 0}, {-1, 1},
+                    {0, -1} /*{0, 0}*/, {0, 1},
+                    {1, -1}, {1, 0}, {1, 1}};
     public static final double TEMPERATURA_MAXIMA = 10000.0;
     public static final double TEMPERATURA_MINIMA = 0.0001;
     public static final double REDUCAO_TEMPERATURA_POR_ITERACAO = 0.9999;
@@ -44,6 +44,7 @@ public final class Algoritmo {
             final var linha = reader.readLine().replace(" ", "").toCharArray();
             matriz[i] = linha;
         }
+        reader.close();
         return new Algoritmo(matriz);
     }
 
@@ -57,16 +58,16 @@ public final class Algoritmo {
 
         var temperatura = TEMPERATURA_MAXIMA;
         while (temperatura > TEMPERATURA_MINIMA) {
-            System.out.println("Temperatura: " + temperatura + "ºC");
+            // System.out.println("Temperatura: " + temperatura + "ºC");
             vizinha();
-            imprimirSolucao(vizinha.direcoes, "Solução vizinha");
-            imprimirCaminho(vizinha.direcoes, labirinto, "Caminho da solução vizinha");
+            // imprimirSolucao(vizinha.direcoes, "Solução vizinha");
+            // imprimirCaminho(vizinha.direcoes, labirinto, "Caminho da solução vizinha");
             if (atual.comida == comidaTotal) break;
-            if (vizinha.comida > atual.comida) swap();
+            if (vizinha.comida > atual.comida || (vizinha.comida == atual.comida && vizinha.direcoes.size() > atual.direcoes.size())) swap();
             else {
-                final var diffEnergia = Math.abs(vizinha.comida - atual.comida);
-                final var chanceAceitePiorSolucao = Math.exp(-diffEnergia / temperatura);
-                if (Math.random() < chanceAceitePiorSolucao) swap();
+                // final var diffEnergia = Math.abs(vizinha.comida - atual.comida);
+                // final var chanceAceitePiorSolucao = Math.exp(-diffEnergia / temperatura);
+                // if (Math.random() < chanceAceitePiorSolucao) swap();
             }
             temperatura *= REDUCAO_TEMPERATURA_POR_ITERACAO;
         }
@@ -112,7 +113,7 @@ public final class Algoritmo {
     }
 
     private void vizinha() {
-        var indiceMutacao = random.nextInt(atual.direcoes.size());
+        var indiceMutacao = random.nextInt(atual.direcoes.size() < tamanho -1 ? atual.direcoes.size() + 1 : atual.direcoes.size());
         vizinha = copiarAte(indiceMutacao, atual);
         var linha = vizinha.linha;
         var coluna = vizinha.coluna;
@@ -137,20 +138,22 @@ public final class Algoritmo {
 
     private Solucao copiarAte(int indiceMutacao, Solucao atual) {
         var copia = new Solucao();
-        copia.comida = 0;
-        copia.comidas = new HashMap<>();
         var linha = 0;
         var coluna = 0;
         for (int i = 0; i < indiceMutacao; i++) {
-            linha += atual.linha;
-            coluna += atual.coluna;
-            copia.direcoes.add(atual.direcoes.get(i));
+            var dir = atual.direcoes.get(i);
+            linha += dir[0];
+            coluna += dir[1];
+            copia.andar(dir);
             if(isComida(linha, coluna)) copia.tentaComer(linha, coluna);
         }
         return copia;
     }
 
     private void swap() {
+        System.out.println("Trocou!");
+        imprimirSolucao(vizinha.direcoes, "Solução vizinha");
+        imprimirCaminho(vizinha.direcoes, labirinto, "Caminho da solução vizinha");
         final var aux = atual;
         atual = vizinha;
         vizinha = aux;

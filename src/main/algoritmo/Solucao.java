@@ -40,5 +40,7 @@ public class Solucao {
 
     public void andar(int[] direcao) {
         direcoes.add(direcao);
+        linha += direcao[0];
+        coluna += direcao[1];
     }
 }

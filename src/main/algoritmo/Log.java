@@ -1,5 +1,6 @@
 package main.algoritmo;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -8,16 +9,16 @@ import static main.algoritmo.Algoritmo.DIRECOES;
 public class Log {
 
     // Tradução das direções para os seus devidos nomes.
-    public static final Map<String, int[]> DIRECOES_NOME = Map.of(
-            "NOROESTE", DIRECOES[0],
-            "NORTE", DIRECOES[1],
-            "NORDESTE", DIRECOES[2],
-            "OESTE", DIRECOES[3],
-            "LESTE", DIRECOES[4],
-            "SUDOESTE", DIRECOES[5],
-            "SUL", DIRECOES[6],
-            "SUDESTE", DIRECOES[7]
-    );
+    public static final Map<String, String> DIRECOES_NOME = Map.of(
+            Arrays.toString(DIRECOES[0]),"NOROESTE",
+            Arrays.toString(DIRECOES[1]),"NORTE",
+            Arrays.toString(DIRECOES[2]),"NORDESTE",
+            Arrays.toString(DIRECOES[3]),"OESTE",
+            Arrays.toString(DIRECOES[4]),"LESTE",
+            Arrays.toString(DIRECOES[5]),"SUDOESTE",
+            Arrays.toString(DIRECOES[6]),"SUL",
+            Arrays.toString(DIRECOES[7]),"SUDESTE"
+        );
 
     private Log() {
     }
@@ -26,8 +27,8 @@ public class Log {
         System.out.println(mensagem);
         System.out.print("[");
         for (int[] ints : solucao) {
-            if (DIRECOES_NOME.get(ints[0] + "" + ints[1]) != null) {
-                System.out.print(DIRECOES_NOME.get(ints[0] + "" + ints[1]) + " ");
+            if (DIRECOES_NOME.get(Arrays.toString(ints)) != null) {
+                System.out.print(DIRECOES_NOME.get(Arrays.toString(ints)) + " ");
             }
         }
         System.out.print("]");
